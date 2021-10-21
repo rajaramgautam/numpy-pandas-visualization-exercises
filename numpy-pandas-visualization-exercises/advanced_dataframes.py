@@ -326,10 +326,10 @@ users.merge(roles, how='right', on=None, left_on=None, right_on=None, left_index
 
 # # 3. What is the result of using an outer join on the DataFrames?
 
-# In[97]:
+# In[287]:
 
 
-users.merge(roles, how='outer', on=None, left_on=None, right_on=None, left_index=False, right_index=False, indicator=False)
+pd.merge(users, roles, how='outer', on=None, left_on=None, right_on=None, left_index=False, right_index=False, indicator=False)
 
 
 # # 4. What happens if you drop the foreign keys from the DataFrames and try to merge them?
@@ -405,6 +405,12 @@ mpg.shape[1]
 
 # # 8. Check out your column names and perform any cleanup you may want on them.
 
+# In[288]:
+
+
+mpg.columns
+
+
 # In[114]:
 
 
@@ -413,10 +419,16 @@ mpg.head(30)
 
 # # 9. Display the summary statistics for the dataset.
 
-# In[109]:
+# In[291]:
 
 
-mpg.describe()
+mpg.info()
+
+
+# In[289]:
+
+
+mpg.describe
 
 
 # # 10. How many different manufacturers are there?
@@ -481,28 +493,16 @@ mpg
 # # 15. Using the mpg dataset, find out which which manufacturer has the best miles per gallon on average?
 # 
 
-# In[190]:
+# In[363]:
 
 
+mpg.groupby(mpg.manufacturer).average_mileage.mean().sort_values().tail(1)
 
 
-
-# In[169]:
-
-
-mpg[mpg.average_mileage == mpg.average_mileage.max()]
+# In[364]:
 
 
-# In[ ]:
-
-
-
-
-
-# In[135]:
-
-
-mpg.max()
+mpg.groupby('manufacturer').average_mileage.agg('mean').sort_values().tail(1)
 
 
 # # 16. Do automatic or manual cars have better miles per gallon?
@@ -513,10 +513,10 @@ mpg.max()
 mpg.groupby('is_automatic')
 
 
-# In[183]:
+# In[360]:
 
 
-mpg.groupby('is_automatic').describe()
+mpg.groupby('is_automatic').average_mileage.agg('mean')
 
 
 # # Exercises III
@@ -524,7 +524,7 @@ mpg.groupby('is_automatic').describe()
 
 # # 1. Use your get_db_url function to help you explore the data from the chipotle database.
 
-# In[207]:
+# In[307]:
 
 
 import pymysql
@@ -540,13 +540,13 @@ chip_df
 
 # # 2. What is the total price for each order?
 
-# In[208]:
+# In[308]:
 
 
 chip_df.groupby('order_id')
 
 
-# In[222]:
+# In[309]:
 
 
 price = chip_df.item_price.str.replace('$', '').astype(float)
@@ -557,13 +557,13 @@ chip_df['price'] = chip_df.item_price.str.replace('$', '').astype(float)
 chip_df
 
 
-# In[223]:
+# In[310]:
 
 
 chip_df.groupby('order_id')
 
 
-# In[224]:
+# In[311]:
 
 
 chip_df.groupby('order_id').price.sum()
@@ -571,15 +571,23 @@ chip_df.groupby('order_id').price.sum()
 
 # # 3. What are the most popular 3 items?
 
-# In[237]:
+# In[323]:
 
 
-chip_df.groupby('item_name').count().sort_values('quantity', ascending=False).head(3)
+chip_df.groupby('item_name').agg('sum').sort_values('quantity', ascending=False).head(3)
+
+
+# In[324]:
+
+
+# group by item_name using the sum of quantity to compare the groups
+# sorting in decending order and only showing the top three items
+chip_df.groupby('item_name').quantity.agg('sum').sort_values(ascending=False).head(3)
 
 
 # # 4. Which item has produced the most revenue?
 
-# In[239]:
+# In[334]:
 
 
 price_total = chip_df.quantity * chip_df.price
@@ -587,19 +595,34 @@ price_total = chip_df.quantity * chip_df.price
 # mpg[mpg.trans.str.contains('auto')]
 
 chip_df['price_total'] = chip_df.quantity * chip_df.price
-chip_df
+chip_df.head(100)
 
 
-# In[243]:
+# In[327]:
 
 
-# chip_df.price_total.idxmax()
-chip_df[chip_df.price_total == chip_df.price_total.max()]
+# group by item_name using the sum of item_price to compare the groups
+# sort values in decending order and displaying only the top  
+chip_df.groupby('item_name').price_total.sum().sort_values(ascending=False).head(1)
+
+
+# In[330]:
+
+
+chip_df.groupby('item_name').price_total.agg('sum').sort_values(ascending=False).head(1)
+
+
+# In[332]:
+
+
+# group by item_name using the sum of item_price to compare the groups
+# sort values in decending order and displaying only the top  
+chip_df.groupby('item_name').price.agg('sum').sort_values(ascending=False).head(1)
 
 
 # # 5. Join the employees and titles DataFrames together.
 
-# In[275]:
+# In[315]:
 
 
 sql3 = """
@@ -612,7 +635,7 @@ emp_df = pd.read_sql(sql3, url3)
 emp_df
 
 
-# In[276]:
+# In[316]:
 
 
 sql4 = """
@@ -625,13 +648,22 @@ title_df = pd.read_sql(sql4, url4)
 title_df
 
 
-# In[279]:
+# In[317]:
 
 
 
 join_emp = emp_df.merge(title_df, left_on='emp_no', right_on ='emp_no', how='inner', indicator=True)
 
 join_emp
+
+
+# In[319]:
+
+
+# get inner join of employees and titles joining on emp_no for both
+import pandas as pd
+employee_titles = pd.merge(emp_df, title_df, left_on='emp_no', right_on='emp_no', how='inner')
+employee_titles
 
 
 # # 6. For each title, find the hire date of the employee that was hired most recently with that title.
